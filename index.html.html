@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>時空地球：世界歷史事件圖鑑</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌏</text></svg>">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@500;700&display=swap" rel="stylesheet">
+<style>
+:root{color-scheme:dark;--ink:#0b1322;--sea:#12203a;--brass:#f0b95a;--paper:#efe3c8;--mute:#a99f86;--line:rgba(240,185,90,.28);
+ box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;background:radial-gradient(ellipse at 50% 40%,#16284a 0%,var(--ink) 70%);color:var(--paper);
+ font-family:"Noto Serif TC","Songti TC","PingFang TC","Microsoft JhengHei",serif;overflow:hidden}
+#globe{position:fixed;inset:0}
+header{position:fixed;top:env(safe-area-inset-top,0px);left:0;padding:16px 18px;max-width:min(520px,80vw);pointer-events:none;z-index:5}
+h1{margin:0;font-size:clamp(18px,4.6vw,28px);letter-spacing:.06em;color:var(--brass);font-weight:700;text-shadow:0 2px 12px #000}
+header p{margin:6px 0 0;font-size:clamp(12px,3.2vw,14px);color:var(--mute)}
+#dock{position:fixed;left:0;right:0;bottom:env(safe-area-inset-bottom,0px);z-index:6;padding:10px 14px 14px;
+ background:linear-gradient(transparent,rgba(8,14,27,.92) 35%)}
+#chips,#periods{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;padding:2px 0}
+#chips::-webkit-scrollbar,#periods::-webkit-scrollbar{display:none}
+.chip{flex:none;border:1px solid var(--line);background:rgba(18,32,58,.8);color:var(--paper);padding:6px 12px;border-radius:99px;
+ font:inherit;font-size:13px;cursor:pointer}
+.chip.on{background:var(--brass);color:#2a1d05;border-color:var(--brass)}
+.per{flex:1 0 auto;background:none;border:0;color:var(--mute);font:inherit;font-size:14px;padding:8px 10px;cursor:pointer;
+ border-bottom:2px solid transparent;white-space:nowrap}
+.per.on{color:var(--brass);border-color:var(--brass);font-weight:700}
+#range{width:100%;margin:6px 0 2px;accent-color:var(--brass)}
+#card{position:fixed;z-index:7;background:rgba(14,24,44,.95);border:1px solid var(--line);border-radius:14px;padding:18px 18px 16px;
+ box-shadow:0 12px 40px rgba(0,0,0,.55);backdrop-filter:blur(8px);transform:translateY(12px);opacity:0;pointer-events:none;
+ transition:opacity .25s,transform .25s;max-height:46vh;overflow:auto}
+#card.show{opacity:1;transform:none;pointer-events:auto}
+@media(min-width:760px){#card{right:24px;top:90px;width:340px;max-height:calc(100vh - 220px)}}
+@media(max-width:759px){#card{left:12px;right:12px;bottom:calc(150px + env(safe-area-inset-bottom,0px))}}
+#card h2{margin:0 28px 2px 0;font-size:20px;color:var(--brass)}
+#card .meta{color:var(--mute);font-size:13px;margin-bottom:10px}
+#card p{margin:0 0 10px;font-size:15px;line-height:1.8}
+#card .imp{border-top:1px solid var(--line);padding-top:10px;font-size:14px;line-height:1.75;color:#d9ccaa}
+#card .imp b{color:var(--brass)}
+#x{position:absolute;top:8px;right:10px;background:none;border:0;color:var(--mute);font-size:22px;cursor:pointer}
+.mk{all:unset;position:relative;width:22px;height:22px;margin:-11px 0 0 -11px;cursor:pointer;display:block}
+.mk::before{content:"";position:absolute;inset:6px;border-radius:50%;background:var(--brass);box-shadow:0 0 10px 3px rgba(240,185,90,.9)}
+.mk::after{content:"";position:absolute;inset:0;border-radius:50%;border:2px solid var(--brass);animation:pulse 2s ease-out infinite}
+.mk.on::before{background:#fff;box-shadow:0 0 14px 5px #fff}
+.mk:focus-visible{outline:2px solid #fff;outline-offset:4px}
+@keyframes pulse{0%{transform:scale(.4);opacity:1}100%{transform:scale(1.9);opacity:0}}
+@media(prefers-reduced-motion:reduce){.mk::after{animation:none}#card{transition:none}}
+</style>
+</head>
+<body>
+<div id="globe"></div>
+<header><h1>時空地球：世界歷史事件圖鑑</h1><p>拖曳旋轉地球、雙指或滾輪縮放，點擊光點看歷史。</p></header>
+<aside id="card" role="dialog" aria-live="polite"><button id="x" aria-label="關閉">×</button>
+ <h2 id="c-name"></h2><div class="meta" id="c-meta"></div><p id="c-sum"></p><div class="imp"><b>歷史影響：</b><span id="c-imp"></span></div></aside>
+<div id="dock">
+ <div id="chips"></div>
+ <input id="range" type="range" min="0" max="4" step="1" value="0" aria-label="時間軸">
+ <div id="periods"></div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/globe.gl@2.27.2/dist/globe.gl.min.js"></script>
+<script>
+const P=[
+{label:"西元前",ev:[
+ {n:"雅典民主制確立",y:"西元前508年",p:"希臘．雅典",lat:37.97,lng:23.73,s:"克里斯提尼改革雅典政治，讓公民可在公民大會上投票決定城邦大事，被視為民主制的起點。",i:"為後世代議政治與公民參與提供了原型。"},
+ {n:"孔子誕生",y:"約西元前551年",p:"中國．曲阜",lat:35.6,lng:117.0,s:"孔子生於魯國，後來周遊列國、廣收弟子，提倡仁、禮與教育，整理並傳授古代典籍。",i:"儒家思想長期塑造東亞的倫理、教育與政治文化。"},
+ {n:"秦統一中國",y:"西元前221年",p:"中國．咸陽",lat:34.33,lng:108.7,s:"秦王嬴政滅六國，建立第一個中央集權的統一王朝，統一文字、度量衡與貨幣。",i:"奠定郡縣制與大一統的基礎，影響中國兩千多年的政治體制。"},
+ {n:"吉薩大金字塔完工",y:"約西元前2560年",p:"埃及．吉薩",lat:29.98,lng:31.13,s:"古埃及法老胡夫動員大量工匠，建成高約146公尺的大金字塔，是古代世界最大的石造建築之一。",i:"展現古埃及的國家組織與工程能力，成為人類文明的象徵。"}]},
+{label:"15–16世紀",ev:[
+ {n:"鄭和下西洋",y:"1405年",p:"中國．南京",lat:32.06,lng:118.8,s:"明成祖派鄭和率龐大船隊出航，先後抵達東南亞、印度洋沿岸與東非，展示國力並促進交流。",i:"擴大了亞非海上貿易與外交往來，是世界航海史的重要篇章。"},
+ {n:"古騰堡印刷術",y:"約1450年",p:"德國．美因茨",lat:50.0,lng:8.27,s:"古騰堡發明金屬活字印刷機，讓書籍能大量、便宜地複製，聖經也成為首批印刷的大書。",i:"加速知識與思想傳播，推動文藝復興與宗教改革。"},
+ {n:"哥倫布抵達美洲",y:"1492年",p:"巴哈馬群島",lat:24.1,lng:-74.5,s:"哥倫布受西班牙王室支持向西航行，抵達加勒比海島嶼，開啟歐洲與美洲長期的接觸。",i:"引發殖民、跨洋貿易與物種交換，也對原住民社會造成巨大衝擊。"},
+ {n:"馬丁路德發表《九十五條論綱》",y:"1517年",p:"德國．維滕貝格",lat:51.87,lng:12.65,s:"路德批評教會販賣贖罪券，提出論綱要求公開辯論，引發廣泛支持與討論。",i:"促成基督新教誕生，改變了歐洲的宗教與政治版圖。"}]},
+{label:"18世紀",ev:[
+ {n:"朱一貴事件",y:"1721年",p:"台灣．南部",lat:22.8,lng:120.3,s:"朱一貴在南台灣起事，一度攻占府城，不久被清軍平定，起因包含吏治腐敗與移民社會的矛盾。",i:"反映清代治台初期的社會張力，促使官方調整治理與防務。"},
+ {n:"瓦特改良蒸汽機",y:"1769年",p:"英國．格拉斯哥",lat:55.86,lng:-4.25,s:"瓦特加裝分離冷凝器，大幅提高蒸汽機效率，讓機器動力能廣泛用於工廠與交通。",i:"成為工業革命的核心動力，帶動工廠制度與城市化。"},
+ {n:"美國獨立宣言",y:"1776年",p:"美國．費城",lat:39.95,lng:-75.17,s:"北美十三個殖民地代表發表宣言，主張人民擁有天賦權利，並宣告脫離英國統治。",i:"建立以共和與人民主權為本的國家，鼓舞各地的獨立運動。"},
+ {n:"法國大革命",y:"1789年",p:"法國．巴黎",lat:48.86,lng:2.35,s:"民眾攻占巴士底監獄，推翻舊制度，並發表《人權宣言》，主張自由與平等。",i:"終結歐洲封建特權，並讓民族主義與民主思想廣為傳播。"}]},
+{label:"19世紀",ev:[
+ {n:"鴉片戰爭",y:"1840年",p:"中國．廣州",lat:23.13,lng:113.26,s:"英國為了貿易與鴉片問題對清朝開戰，戰敗的清朝簽訂《南京條約》，割讓香港並開放通商口岸。",i:"中國被迫進入近代國際體系，開啟長期的主權危機與變革。"},
+ {n:"美國南北戰爭",y:"1861年",p:"美國．華盛頓",lat:38.9,lng:-77.04,s:"南方各州為維護奴隸制而脫離聯邦，與北方爆發內戰，林肯後來發布《解放奴隸宣言》。",i:"廢除奴隸制並維護國家統一，也重塑美國的政治與經濟。"},
+ {n:"明治維新",y:"1868年",p:"日本．東京",lat:35.68,lng:139.69,s:"幕府倒台後，明治政府推動中央集權，並學習西方的工業、軍事與教育制度。",i:"讓日本快速近代化，成為東亞崛起的強國。"},
+ {n:"馬關條約與割讓台灣",y:"1895年",p:"台灣．台北",lat:25.03,lng:121.56,s:"清朝在甲午戰爭中戰敗，簽訂《馬關條約》，將台灣與澎湖割讓給日本，台灣進入日治時期。",i:"改變台灣的政治歸屬，也影響其後半世紀的建設與社會發展。"}]},
+{label:"20世紀",ev:[
+ {n:"第一次世界大戰爆發",y:"1914年",p:"波士尼亞．塞拉耶佛",lat:43.86,lng:18.41,s:"奧匈帝國皇儲遇刺，各國因同盟關係接連參戰，演變成席捲歐洲與世界的大戰。",i:"瓦解多個帝國，重劃歐洲版圖，也埋下二戰的伏筆。"},
+ {n:"印度獨立",y:"1947年",p:"印度．德里",lat:28.61,lng:77.21,s:"在甘地等人推動非暴力運動後，印度脫離英國統治獨立，同時與巴基斯坦分治。",i:"帶動亞非地區的去殖民化浪潮，也留下領土與族群問題。"},
+ {n:"阿波羅11號登月",y:"1969年",p:"美國．佛羅里達",lat:28.5,lng:-80.6,s:"阿波羅11號從佛羅里達升空，太空人阿姆斯壯成為第一位踏上月球的人。",i:"象徵人類太空探索的里程碑，並推動航太與電子技術發展。"},
+ {n:"台灣解除戒嚴",y:"1987年",p:"台灣．台北",lat:25.03,lng:121.56,s:"政府宣告解除實施近四十年的戒嚴令，開放黨禁與報禁，民間言論與結社逐步自由。",i:"開啟台灣的民主化進程，奠定今日多元自由的社會基礎。"}]}
+];
+const land=[
+[[-168,66],[-125,72],[-80,73],[-60,60],[-55,48],[-70,42],[-81,25],[-97,18],[-88,15],[-80,8],[-105,20],[-118,32],[-124,42],[-135,58],[-165,60]],
+[[-80,8],[-60,10],[-35,-6],[-40,-22],[-58,-38],[-68,-54],[-75,-45],[-71,-18],[-81,-5]],
+[[-10,36],[-9,43],[0,50],[8,58],[20,70],[40,68],[70,73],[110,77],[140,72],[170,69],[178,64],[160,55],[142,52],[135,43],[122,40],[122,30],[110,20],[106,10],[100,2],[98,16],[88,22],[78,8],[72,20],[58,25],[50,30],[36,36],[28,41],[22,36],[12,38],[-2,37]],
+[[-17,21],[-6,36],[10,37],[32,31],[43,12],[51,11],[40,-12],[35,-25],[20,-35],[12,-17],[9,4],[-8,4],[-17,14]],
+[[114,-22],[130,-12],[142,-11],[153,-27],[146,-39],[130,-32],[115,-34]],
+[[-55,60],[-20,82],[-20,70],[-45,60]],
+[[130,31],[141,41],[145,44],[140,36]]
+].map(r=>[...r,r[0]]);
+
+const $=id=>document.getElementById(id);
+let cur=-1,sel=null;
+const mk=P.map((p,pi)=>p.ev.map((e,ei)=>{
+ e.pi=pi;e.ei=ei;
+ const b=document.createElement('button');b.className='mk';b.title=e.n;b.setAttribute('aria-label',e.n);
+ b.style.pointerEvents='auto';b.onclick=ev=>{ev.stopPropagation();pick(e)};e.el=b;return e}));
+
+const wrap=$('globe');
+const g=Globe()(wrap)
+ .backgroundColor('rgba(0,0,0,0)')
+ .showAtmosphere(true).atmosphereColor('#f0b95a').atmosphereAltitude(0.18)
+ .showGraticules(true)
+ .polygonsData(land).polygonGeoJsonGeometry(r=>({type:'Polygon',coordinates:[r]}))
+ .polygonAltitude(0.006).polygonCapColor(()=>'rgba(222,196,142,.62)')
+ .polygonSideColor(()=>'rgba(0,0,0,0)').polygonStrokeColor(()=>'rgba(240,185,90,.8)')
+ .htmlLat(d=>d.lat).htmlLng(d=>d.lng).htmlAltitude(0.02).htmlElement(d=>d.el);
+const m=g.globeMaterial();m.color.set('#12203a');m.emissive.set('#0a1730');m.shininess=0;
+const ctl=g.controls();ctl.autoRotate=true;ctl.autoRotateSpeed=0.45;ctl.minDistance=140;ctl.maxDistance=520;
+function fit(){g.width(innerWidth).height(innerHeight)}
+fit();addEventListener('resize',fit);
+['pointerdown','wheel','touchstart'].forEach(t=>wrap.addEventListener(t,()=>{ctl.autoRotate=false},{passive:true}));
+
+function pick(e){
+ sel=e;$('c-name').textContent=e.n;$('c-meta').textContent=e.y+'　｜　'+e.p;
+ $('c-sum').textContent=e.s;$('c-imp').textContent=e.i;$('card').classList.add('show');
+ ctl.autoRotate=false;g.pointOfView({lat:e.lat,lng:e.lng,altitude:1.5},1000);
+ P[e.pi].ev.forEach(x=>x.el.classList.toggle('on',x===e));
+ document.querySelectorAll('#chips .chip').forEach((c,i)=>c.classList.toggle('on',i===e.ei));
+}
+function setP(i,fly=true){
+ if(i===cur)return;cur=i;sel=null;$('card').classList.remove('show');
+ $('range').value=i;
+ document.querySelectorAll('.per').forEach((b,k)=>b.classList.toggle('on',k===i));
+ const ev=P[i].ev;ev.forEach(e=>e.el.classList.remove('on'));
+ g.htmlElementsData(ev);
+ const c=$('chips');c.innerHTML='';
+ ev.forEach(e=>{const b=document.createElement('button');b.className='chip';b.textContent=e.n;b.onclick=()=>pick(e);c.appendChild(b)});
+ if(fly){const a=ev[0];g.pointOfView({lat:a.lat,lng:a.lng,altitude:2.3},1400)}
+}
+P.forEach((p,i)=>{const b=document.createElement('button');b.className='per';b.textContent=p.label;b.onclick=()=>setP(i);$('periods').appendChild(b)});
+$('range').oninput=e=>setP(+e.target.value);
+$('x').onclick=()=>{$('card').classList.remove('show');P[cur].ev.forEach(e=>e.el.classList.remove('on'));document.querySelectorAll('#chips .chip').forEach(c=>c.classList.remove('on'))};
+setP(1,false);g.pointOfView({lat:30,lng:60,altitude:2.6},0);
+</script>
+</body>
+</html>
